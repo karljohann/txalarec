@@ -36,7 +36,7 @@ t.close
 
 TxalaRecGUI {
 	var parent;
-	var txalascoreevents, txalascoremarks, txalascore, timelinewin, txalascoreF, txalascoresttime, csvfile, numberOfChannels, <>channelSize;
+	var txalascoreevents, txalascoremarks, txalascore, timelinewin, txalascoreF, txalascoresttime, csvfile, recChannels, <>channelSize;
 	var isRecording = false;
 	var storagepath = "~/"; // assuming unix-based OS
 	var filepath, csvKeys;
@@ -65,8 +65,8 @@ TxalaRecGUI {
 		});
 	}
 
-	setChannelSize { arg chSize;
-		channelSize = chSize;
+	setRecChannels { arg channel_arr;
+		recChannels = channel_arr;
 	}
 
 	setFileStoragePath { arg path;
@@ -201,7 +201,7 @@ TxalaRecGUI {
 			.action_({ arg butt;
 				// Server.default.record;
 				if ((butt.value == 1), {
-					{ SoundIn.ar([(0..numberOfChannels)]) }.play;
+					{ SoundIn.ar(recChannels) }.play;
 					Server.default.record(numChannels: 8);
 					isRecording = true;
 					this.changebg();
@@ -215,20 +215,6 @@ TxalaRecGUI {
 					});
 				});
 			});
-
-			PopUpMenu(timelinewin, Rect(325, (timelinewin.bounds.height - 22), 150, 20))
-			.items_(
-				["Record channels:"].addAll((1..8))
-				// "Record channels:", (1..(if (channelSize.isKindOf(Number), channelSize, 8)))
-			)
-			.background_(Color.gray)
-			.action_({ arg menu;
-				if ((menu.value != 0), { // skip "Record channels:"
-					numberOfChannels = menu.value.asInteger - 1;
-				});
-			})
-			.valueAction_(8);
-
 
 			AppClock.play(txalascoreF);
 

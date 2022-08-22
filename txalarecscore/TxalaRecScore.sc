@@ -1,5 +1,5 @@
 
-TxalaScore {
+TxalaRecScore {
 
 	var win, view, sndview, >events, >marks, selected, timeoffset, image, record, recordtask, <numplanks;
 	var <>drawmode=false, <>drawplanks=false, <>drawgroup=false, eventcutindex=0, markcutindex=0;
