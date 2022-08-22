@@ -1,7 +1,9 @@
+(
 // 0. Settings
 // Where the files will be stored and the rec_info file is located ->
 // "/path/to/current/session/"
-~storage_path = "/Users/karljohann/Downloads/txalaparta_recordings/session1/";
+// thisProcess.nowExecutingPath.dirname
+~storage_path = "/Users/karljohann/Downloads/txalaparta_recordings/session2/";
 
 
 // 1. Init
@@ -35,6 +37,7 @@ thisProcess.platform.recordingsDir = ~storage_path; // recordings will be stored
 	channels = channels ++ ~storage_path;
 
 	csvfile.write( headers );
+	csvfile.write( "\n" );
 	csvfile.write( channels );
 	csvfile.close;
 };
@@ -52,6 +55,19 @@ thisProcess.platform.recordingsDir = ~storage_path; // recordings will be stored
 		});
 	};
 	channels;
+};
+
+// Returns channels to record
+~getRecChannels = {
+	var recChannels = [];
+	~recInfo.keysValuesDo{ |key, val|
+		if (val != "", {
+			var in = key.asString.findRegexp("ch([0-9]+)");
+			var ch = in[1][1].asInteger - 1;
+			recChannels = recChannels.add(ch);
+		});
+	};
+	recChannels;
 };
 
 // 2. Onset detection synth
@@ -156,12 +172,12 @@ s.waitForBoot{
 		t.updateNumPlanks(3);
 		t.setFileStoragePath(~storage_path);
 		t.setCSVKeys(keys);
-		// t.channelSize = 8;
-		t.setChannelSize(~numInputChannels.asInteger);
+		t.setRecChannels(~getRecChannels);
 
 	};
 	m.();
 }
+)
 
 // Stop recording ->
 // Server.default.stopRecording; // also stops on cmd-.
