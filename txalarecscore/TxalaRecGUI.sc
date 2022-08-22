@@ -36,17 +36,17 @@ t.close
 
 TxalaRecGUI {
 	var parent;
-	var txalascoreevents, txalascoremarks, txalascore, timelinewin, txalascoreF, txalascoresttime, csvfile, recChannels, <>channelSize;
+	var txalascoreevents, txalascoremarks, txalascore, timelinewin, txalascoreF, txalascoresttime, csvfile, <>recChannels;
 	var isRecording = false;
 	var storagepath = "~/"; // assuming unix-based OS
 	var filepath, csvKeys;
 	var <>lasttime = 0; // init time of last hit
 
 	*new {
-		^super.new.initTxalaScoreGUI();
+		^super.new.initTxalaRecGUI();
 	}
 
-	initTxalaScoreGUI {
+	initTxalaRecGUI {
 		this.reset()
 	}
 
@@ -65,8 +65,8 @@ TxalaRecGUI {
 		});
 	}
 
-	setRecChannels { arg channel_arr;
-		recChannels = channel_arr;
+	setRecChannels { arg channels;
+		recChannels = channels;
 	}
 
 	setFileStoragePath { arg path;
@@ -159,7 +159,7 @@ TxalaRecGUI {
 		} );
 		txalascore = nil;
 		if ( (timelinewin.isNil.not), {
-			txalascore = TxalaScore.new(timelinewin,
+			txalascore = TxalaRecScore.new(timelinewin,
 				Rect(0, 0, timelinewin.bounds.width, timelinewin.bounds.height-25), numplanks, tframe, mode, planks, group)
 		});
 
@@ -175,7 +175,7 @@ TxalaRecGUI {
 
 		    txalascoresttime = Main.elapsedTime;
 			txalascore = nil;
-			txalascore = TxalaScore.new(timelinewin,
+			txalascore = TxalaRecScore.new(timelinewin,
 				Rect(0, 0, timelinewin.bounds.width, timelinewin.bounds.height-25),
 				numactiveplanks);
 
