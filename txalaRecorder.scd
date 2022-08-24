@@ -3,7 +3,90 @@
 // Where the files will be stored and the rec_info file is located ->
 // "/path/to/current/session/"
 // thisProcess.nowExecutingPath.dirname
-~storage_path = "/Users/karljohann/Downloads/txalaparta_recordings/session2/";
+//~storage_path = "/Users/karljohann/Downloads/txalaparta_recordings/session2/";
+
+var data=Dictionary.new;
+var thispath = thisProcess.nowExecutingPath.dirname;
+
+
+//~storage_path = "/media/r2d2/data/txala_irss_data/";
+~storage_path = "/home/r2d2/Mahaigaina/delete/";
+
+try { ~synths.collect(_.free) }; // free synths in case they are still around
+~synths = List.new;
+
+// calibration window with auto load/save prefs
+~controls = Dictionary.new;
+w = Window(\Session_settings, 300@100).front;
+w.view.decorator = FlowLayout(w.view.bounds);
+w.view.decorator.gap=2@2;
+
+~controls[\storage_path] = Button(w, 290@20)
+.states_([
+	["storage_path", Color.white, Color.black]
+])
+.action_({ arg butt;
+	FileDialog({|path|
+		path[0].postln;
+		~storage_path = path[0];
+		data = Dictionary.new;
+		data.put(\storage_path, ~storage_path);
+		data.put(\threshold, ~controls[\threshold].value);
+		data.put(\relaxtime, ~controls[\relaxtime].value);
+		data.writeArchive(thispath ++ "/" ++ "prefs.preset");
+	}, fileMode:2)
+});
+w.view.decorator.nextLine;
+~controls[\threshold] = EZSlider( w,         // parent
+	290@20,    // bounds
+	"threshold",  // label
+	ControlSpec(0, 1, \lin, 0.01, 0.06),     // controlSpec
+	{ arg ez;
+		~synths.do{|syn| syn.set(\threshold, ez.value)};
+		data = Dictionary.new;
+		data.put(\storage_path, ~storage_path);
+		data.put(\threshold, ~controls[\threshold].value);
+		data.put(\relaxtime, ~controls[\relaxtime].value);
+		data.writeArchive(thispath ++ "/" ++ "prefs.preset");
+	},
+	initVal: 0.06,
+	labelWidth: 60;
+);
+w.view.decorator.nextLine;
+~controls[\relaxtime] = EZSlider( w,         // parent
+	290@20,    // bounds
+	"relax time",  // label
+	ControlSpec(0, 1, \lin, 0.01, 0.01),     // controlSpec
+	{ arg ez;
+		~synths.do{|syn| syn.set(\relaxtime, ez.value)};
+		data = Dictionary.new;
+		data.put(\storage_path, ~storage_path);
+		data.put(\threshold, ~controls[\threshold].value);
+		data.put(\relaxtime, ~controls[\relaxtime].value);
+		data.writeArchive(thispath ++ "/" ++ "prefs.preset");
+	},
+	initVal: 0.01,
+	labelWidth: 60;
+);
+
+
+// auto read prefs file. create a default one if not there
+data = Object.readArchive(thispath ++ "/" ++ "prefs.preset");
+if (data.isNil, { //file wasn't there. create a default one
+	data=Dictionary.new;
+	data[\storage_path]= ~storage_path;
+	data[\threshold]=0.06;
+	data[\relaxtime]=0.01;
+	data.writeArchive(thispath  ++ "/" ++ "prefs.preset");
+});
+//data.postln;
+
+//restore the values from the prefs
+~storage_path = data[\storage_path];
+~controls[\threshold].valueAction_( data[\threshold] );
+~controls[\relaxtime].valueAction_( data[\relaxtime] );
+
+
 
 
 // 1. Init
@@ -70,29 +153,31 @@ thisProcess.platform.recordingsDir = ~storage_path; // recordings will be stored
 	recChannels;
 };
 
+
+
 // 2. Onset detection synth
-SynthDef(\detector, { |in=0, threshold=0.15, relaxtime=0.05, blocksize=1024, gain=0|
-    var plank_lvl, plank_idx, freq, hasFreq, baton_lvl, onsets, delayedOnsets, fft;
-    var sdel = 0.04; // [threeinputs.scd] this is a small delay to skip the first chaotic miliseconds
+SynthDef(\detector, { |in=0, threshold=0.06, relaxtime=0.01, blocksize=1024, gain=0|
+	var plank_lvl, plank_idx, freq, hasFreq, baton_lvl, onsets, delayedOnsets, fft;
+	var sdel = 0.04; // [threeinputs.scd] this is a small delay to skip the first chaotic miliseconds
 	var plank_channels = ~getChannels.(\plk);
 
-    var baton = SoundIn.ar(in);
-    var planks = SoundIn.ar(plank_channels);
-    var planklevels = WAmp.kr(planks, sdel);
+	var baton = SoundIn.ar(in) * gain;
+	var planks = SoundIn.ar(plank_channels) * gain;
+	var planklevels = WAmp.kr(planks, sdel);
 
 	var freqs = Array.newClear(plank_channels.size);
 
-    # plank_lvl, plank_idx = ArrayMax.ar(planklevels); // # val, index
+	# plank_lvl, plank_idx = ArrayMax.ar(planklevels); // # val, index
 
 	plank_channels.do{ |plk_ch, i|
 		freqs[i] = Pitch.kr(SoundIn.ar(plk_ch), ampThreshold:0.02, median:7); // # freq, hasFreq
 	};
 
-    baton_lvl = WAmp.kr(baton, 0.1); // Window size should probably be around 50 ms? (0.05)
+	baton_lvl = WAmp.kr(baton, 0.1); // Window size should probably be around 50 ms? (0.05)
 
 	fft = FFT(LocalBuf(blocksize), baton, wintype:1);
-    onsets = Onsets.kr(fft, threshold, odftype:\power, relaxtime:relaxtime, mingap:4);
-    delayedOnsets = DelayN.kr(onsets, maxdelaytime:sdel, delaytime:sdel); // delay onsets to get plank
+	onsets = Onsets.kr(fft, threshold, odftype:\power, relaxtime:relaxtime, mingap:4);
+	delayedOnsets = DelayN.kr(onsets, maxdelaytime:sdel, delaytime:sdel); // delay onsets to get plank
 
 	SendReply.kr(delayedOnsets, '/input', [
 		in,
@@ -135,7 +220,7 @@ OSCFunc({
 		\plank_lvl_1 -> msg[8].asFloat,
 		\plank_lvl_2 -> msg[9].asFloat,
 		\plank_lvl_3 -> msg[10].asFloat,
-		];
+	];
 
 	t.hit(SystemClock.seconds, args[\baton_lvl], args[\plank], (args[\baton] + 1), args);
 
@@ -163,7 +248,7 @@ s.waitForBoot{
 		var batonChannels = ~getChannels.();
 		batonChannels.do{ |ch|
 			// create onset detection synth for each baton
-			Synth(\detector, [\in, ch]);
+			~synths.add( Synth(\detector, [\in, ch]) );
 		};
 
 		// Init GUI ->
@@ -173,7 +258,6 @@ s.waitForBoot{
 		t.setFileStoragePath(~storage_path);
 		t.setCSVKeys(keys);
 		t.setRecChannels(~getRecChannels);
-
 	};
 	m.();
 }
