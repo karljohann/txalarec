@@ -9,8 +9,8 @@ var data=Dictionary.new;
 var thispath = thisProcess.nowExecutingPath.dirname;
 
 
-//~storage_path = "/media/r2d2/data/txala_irss_data/";
-~storage_path = "/home/r2d2/Mahaigaina/delete/";
+~storage_path = "/media/r2d2/data/txala_irss_data/";
+//~storage_path = "/home/r2d2/Mahaigaina/delete/";
 
 try { ~synths.collect(_.free) }; // free synths in case they are still around
 ~synths = List.new;
@@ -33,6 +33,7 @@ w.view.decorator.gap=2@2;
 		data.put(\storage_path, ~storage_path);
 		data.put(\threshold, ~controls[\threshold].value);
 		data.put(\relaxtime, ~controls[\relaxtime].value);
+		data.put(\gain, ~controls[\gain].value);
 		data.writeArchive(thispath ++ "/" ++ "prefs.preset");
 	}, fileMode:2)
 });
@@ -40,18 +41,20 @@ w.view.decorator.nextLine;
 ~controls[\threshold] = EZSlider( w,         // parent
 	290@20,    // bounds
 	"threshold",  // label
-	ControlSpec(0, 1, \lin, 0.01, 0.06),     // controlSpec
+	ControlSpec(0, 1, \lin, 0.001, 0.06),     // controlSpec
 	{ arg ez;
 		~synths.do{|syn| syn.set(\threshold, ez.value)};
 		data = Dictionary.new;
 		data.put(\storage_path, ~storage_path);
 		data.put(\threshold, ~controls[\threshold].value);
 		data.put(\relaxtime, ~controls[\relaxtime].value);
+		data.put(\gain, ~controls[\gain].value);
 		data.writeArchive(thispath ++ "/" ++ "prefs.preset");
 	},
 	initVal: 0.06,
 	labelWidth: 60;
 );
+~controls[\threshold].numberView.maxDecimals = 3 ;
 w.view.decorator.nextLine;
 ~controls[\relaxtime] = EZSlider( w,         // parent
 	290@20,    // bounds
@@ -63,28 +66,50 @@ w.view.decorator.nextLine;
 		data.put(\storage_path, ~storage_path);
 		data.put(\threshold, ~controls[\threshold].value);
 		data.put(\relaxtime, ~controls[\relaxtime].value);
+		data.put(\gain, ~controls[\gain].value);
 		data.writeArchive(thispath ++ "/" ++ "prefs.preset");
 	},
 	initVal: 0.01,
 	labelWidth: 60;
 );
-
+w.view.decorator.nextLine;
+~controls[\gain] = EZSlider( w,         // parent
+	290@20,    // bounds
+	\gain,  // label
+	ControlSpec(0, 10, \lin, 0.01, 1),     // controlSpec
+	{ arg ez;
+		~synths.do{|syn| syn.set(\gain, ez.value)};
+		data = Dictionary.new;
+		data.put(\storage_path, ~storage_path);
+		data.put(\threshold, ~controls[\threshold].value);
+		data.put(\relaxtime, ~controls[\relaxtime].value);
+		data.put(\gain, ~controls[\gain].value);
+		data.postln;
+		data.writeArchive(thispath ++ "/" ++ "prefs.preset");
+	},
+	initVal: 1,
+	labelWidth: 60;
+);
 
 // auto read prefs file. create a default one if not there
 data = Object.readArchive(thispath ++ "/" ++ "prefs.preset");
 if (data.isNil, { //file wasn't there. create a default one
 	data=Dictionary.new;
 	data[\storage_path]= ~storage_path;
-	data[\threshold]=0.06;
+	data[\threshold]=0.1;
 	data[\relaxtime]=0.01;
+	data[\gain]=1;
 	data.writeArchive(thispath  ++ "/" ++ "prefs.preset");
 });
 //data.postln;
 
 //restore the values from the prefs
 ~storage_path = data[\storage_path];
-~controls[\threshold].valueAction_( data[\threshold] );
-~controls[\relaxtime].valueAction_( data[\relaxtime] );
+~synths.do{|syn| syn.set(\threshold, data[\threshold], \relaxtime, data[\relaxtime], \gain, data[\gain])};
+// set the sliders but dont trigger the action at this moment
+~controls[\threshold].value_( data[\threshold] );
+~controls[\relaxtime].value_( data[\relaxtime] );
+~controls[\gain].value_( data[\gain] );
 
 
 
@@ -156,7 +181,7 @@ thisProcess.platform.recordingsDir = ~storage_path; // recordings will be stored
 
 
 // 2. Onset detection synth
-SynthDef(\detector, { |in=0, threshold=0.06, relaxtime=0.01, blocksize=1024, gain=0|
+SynthDef(\detector, { |in=0, threshold=0.06, relaxtime=0.01, blocksize=1024, gain=5|
 	var plank_lvl, plank_idx, freq, hasFreq, baton_lvl, onsets, delayedOnsets, fft;
 	var sdel = 0.04; // [threeinputs.scd] this is a small delay to skip the first chaotic miliseconds
 	var plank_channels = ~getChannels.(\plk);
