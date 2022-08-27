@@ -49,7 +49,7 @@ w.view.decorator.nextLine;
 ~controls[\threshold] = EZSlider( w,         // parent
 	290@20,    // bounds
 	"threshold",  // label
-	ControlSpec(0, 1, \lin, 0.01, 0.06),     // controlSpec
+	ControlSpec(0, 1, \lin, 0.001, 0.06),     // controlSpec
 	{ arg ez;
 		~synths.do{ |syn| syn.set(\threshold, ez.value) };
 		persistControls.(~storage_path, ~controls);
@@ -57,6 +57,7 @@ w.view.decorator.nextLine;
 	initVal: 0.06,
 	labelWidth: 60;
 );
+~controls[\threshold].numberView.maxDecimals = 3 ;
 w.view.decorator.nextLine;
 ~controls[\relaxtime] = EZSlider( w,         // parent
 	290@20,    // bounds
@@ -81,7 +82,6 @@ w.view.decorator.nextLine;
 	initVal: 1,
 	labelWidth: 60;
 );
-
 
 // auto read prefs file. create a default one if not there
 data = Object.readArchive(thispath ++ "/" ++ "prefs.preset");
@@ -109,6 +109,7 @@ if (data.isNil, { // file wasn't there. create a default one
 ~controls.keysDo{ |key|
 	~controls[key].value_( data[key] );
 };
+
 
 
 
