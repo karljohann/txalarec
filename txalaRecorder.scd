@@ -41,7 +41,7 @@ persistControls = { |storage_path, controls|
 		});
 	},
 	fileMode: 2,
-	// path: if (~storage_path.notEmpty, ~storage_path, "") // Default? Just use storage_path, no ifs
+	path: if (~storage_path.notEmpty, ~storage_path)
 	// path: ~storage_path
 	)
 });
