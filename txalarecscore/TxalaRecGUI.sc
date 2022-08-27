@@ -39,7 +39,7 @@ TxalaRecGUI {
 	var txalascoreevents, txalascoremarks, txalascore, timelinewin, txalascoreF, txalascoresttime, csvfile, <>recChannels;
 	var isRecording = false;
 	var storagepath = "~/"; // assuming unix-based OS
-	var filepath, csvKeys;
+	var filepath;
 	var <>lasttime = 0; // init time of last hit
 
 	*new {
@@ -73,17 +73,16 @@ TxalaRecGUI {
 		storagepath = path.asString;
 	}
 
-	setCSVKeys { arg keys;
-		csvKeys = keys;
+	setFilepath { arg timestamp;
+		filepath = storagepath +/+ "sc_txala_rec_" ++ timestamp ++ ".csv";
 	}
 
-	initCSVFile { arg timestamp;
+	initCSVFile { arg keys;
 		var csvfile;
 		var headers = "";
-		// NOTE: storagepath and csvKeys have to be set first
-		filepath = storagepath +/+ "sc_txala_rec_" ++ timestamp ++ ".csv";
+
 		csvfile = File(filepath, "w");
-		csvKeys.do{ |key|
+		keys.do{ |key|
 			headers = headers ++ key.asString ++ ",";
 		};
 		csvfile.write( headers );
@@ -91,13 +90,13 @@ TxalaRecGUI {
 	}
 
 	writeCSV { arg args;
-		// if (not(File.exists(filepath)), { // TODO: Check for race-condition
-		// this.initCSVFile(filepath);
-		// });
+		if (not(File.exists(filepath)), { // TODO: Check for race-condition
+			this.initCSVFile(args.keys);
+		});
 
 		csvfile = File(filepath, "a");
 		csvfile.write("\n"); // write new line bc append does not
-		csvKeys.do{ |key|
+		args.keys.do{ |key|
 			csvfile.write( args[key].asString ++ ",");
 		};
 		csvfile.close;
@@ -205,7 +204,7 @@ TxalaRecGUI {
 					Server.default.record(numChannels: 8);
 					isRecording = true;
 					this.changebg();
-					this.initCSVFile(Date.getDate.stamp);
+					this.setFilepath(Date.getDate.stamp);
 				}, {
 					if ((butt.value == 0), {
 						Server.default.stopRecording;
