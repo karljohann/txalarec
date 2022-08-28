@@ -204,7 +204,7 @@ TxalaRecGUI {
 					Server.default.record(numChannels: 8);
 					isRecording = true;
 					this.changebg();
-					this.setFilepath(Date.getDate.stamp);
+					this.setFilepath(Date.getDate.stamp); // Update the filepath so it doesnt overwrite
 				}, {
 					if ((butt.value == 0), {
 						Server.default.stopRecording;
