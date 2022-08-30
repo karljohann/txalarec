@@ -1,12 +1,11 @@
 (
-// SETTINGS DIALOGUES =>
-var thispath = thisProcess.nowExecutingPath.dirname;
 ~storage_path = "";
 ~wait_for_path = CondVar();
 
-// calibration window with auto load/save prefs
-{
+// SETTINGS DIALOGUES =>
+{ // calibration window with auto load/save prefs
 	var data = Dictionary.new;
+	var thispath = thisProcess.nowExecutingPath.dirname;
 	var persistControls;
 	var labelWidth = 80;
 	var boundWidth = 360;
