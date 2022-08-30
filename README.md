@@ -9,5 +9,6 @@
 6. Duplicate and fill out the `TxalaRecInfo.rtf` and place it in the `storage_path` folder
 
 ## Known bugs:
+- Control settings are only written at start – if they are changed during recording that is not represented in `rec_info.csv`
 - Pitch detection is not very reliable
 - Amount of planks does not scale – level and pitch are calculated for three planks
