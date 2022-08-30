@@ -21,7 +21,7 @@ persistControls = { |storage_path, controls|
 	data.writeArchive(thispath ++ "/" ++ "prefs.preset");
 };
 
-~controls[\storage_path] = Button(w, 290@20)
+~storage_path_control = Button(w, 290@20)
 .states_([
 	["storage_path", Color.white, Color.black]
 ])
@@ -188,11 +188,11 @@ SynthDef(\detector, { |in=0, threshold=0.06, relaxtime=0.01, blocksize=1024, gai
 			channels = channels ++ val.value.asString ++ ",";
 		};
 
-		// TODO: Write controls values?
-/*		~controls.keysValuesDo{ |key, val|
+		// Write controls values
+		~controls.keysValuesDo{ |key, item|
 			headers = headers ++ key.asString ++ ",";
-			channels = channels ++ val.value.asString ++ ",";
-		};*/
+			channels = channels ++ item.value.asString ++ ",";
+		};
 
 		csvfile.write( headers );
 		csvfile.write( "\n" );
