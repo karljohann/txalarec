@@ -35,7 +35,7 @@ var thispath = thisProcess.nowExecutingPath.dirname;
 			persistControls.(~storage_path, ~controls);
 			if (File.exists(~storage_path +/+ "rec_info.scd"), { // continue if file exists (else things will break)
 				~wait_for_path.signalOne; // let the process know that the storage path has been set
-				// FIXME: We should run main every time path is changed?
+				// re-run main every time path is changed
 				if ((old_path != ~storage_path), { // Only run if path changed
 					~main.(~storage_path);
 				});
@@ -45,7 +45,6 @@ var thispath = thisProcess.nowExecutingPath.dirname;
 		},
 		fileMode: 2,
 		path: if (~storage_path.notEmpty, ~storage_path)
-		// path: ~storage_path
 		)
 	});
 	w.view.decorator.nextLine;
