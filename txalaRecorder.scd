@@ -201,7 +201,7 @@ SynthDef(\detector, { |in=0, threshold=0.06, relaxtime=0.01, blocksize=1024, gai
 	}.();
 
 	// Get channels for batons and planks ->
-	~getChannels = {
+	~channels = {
 		var channels = Dictionary[\baton -> [], \plk -> []];
 		~recInfo.keysValuesDo{ |key, val|
 			var in = key.asString.findRegexp("ch([0-9]+)");
@@ -214,10 +214,24 @@ SynthDef(\detector, { |in=0, threshold=0.06, relaxtime=0.01, blocksize=1024, gai
 			});
 		};
 		channels;
-	};
+	}.();
+
+	// Get channels for batons ->
+	~playerChannels = {
+		var players = Dictionary.new;
+		~recInfo.keysValuesDo{ |key, val|
+			var in = key.asString.findRegexp("ch([0-9]+)");
+			var ch = in[1][1].asInteger - 1;
+			if ("p[0-9][rl]".matchRegexp(val), {
+				var p = val.findRegexp("p([0-9])[rl]");
+				players[ch] = p[1][1].asInteger - 1;
+			});
+		};
+		players;
+	}.();
 
 	// Returns channels to record ->
-	~getRecChannels = {
+	~recChannels = {
 		var recChannels = [];
 		~recInfo.keysValuesDo{ |key, val|
 			if (val != "", {
@@ -227,17 +241,18 @@ SynthDef(\detector, { |in=0, threshold=0.06, relaxtime=0.01, blocksize=1024, gai
 			});
 		};
 		recChannels;
-	};
+	}.();
 
 
 	s.waitForBoot{
-		// get the batons to listen to from recInfo ->
-		var channels = ~getChannels.();
 		~synths!?.collect(_.free); // free synths in case they are still around
 		~synths = List.new;
-		channels[\baton].do{ |ch|
+		~channels[\baton].do{ |ch|
 			// create onset detection synth for each baton
-			~synths = ~synths.add( Synth(\detector, [\in, ch]).setn(\plank_channels, channels[\plk]) );
+			~synths = ~synths.add(
+				Synth(\detector, [\in, ch])
+				.setn(\plank_channels, ~channels[\plk])
+			);
 		};
 
 		// Init GUI ->
@@ -247,7 +262,7 @@ SynthDef(\detector, { |in=0, threshold=0.06, relaxtime=0.01, blocksize=1024, gai
 			t.updateNumPlanks(3);
 		});
 		t.setFileStoragePath(storage_path);
-		t.setRecChannels(~getRecChannels.());
+		t.setRecChannels(~recChannels);
 	};
 };
 
@@ -262,13 +277,12 @@ fork {
 
 // OSC server =>
 OSCFunc({ arg msg;
-	var args, dargs;
+	var args, args_dict, players;
 
 	// calculate timedelta ->
 	var clock = msg[7].asFloat;
 	var lasttime = if ((t.lasttime == 0), clock, t.lasttime);
 	var timedelta = clock - lasttime;
-
 	t.lasttime = clock;
 
 	args = [
@@ -287,13 +301,18 @@ OSCFunc({ arg msg;
 		\pitch_plk3 -> msg[14].asFloat,
 	];
 
-	dargs = args.asDict; //
+	args_dict = args.asDict; // to access the key-value in t.hit
+	t.hit(
+		hittime: SystemClock.seconds,
+		amp: args_dict[\baton_lvl],
+		plank: args_dict[\plank],
+		stick: (args_dict[\baton] + 1),
+		player: ~playerChannels[args_dict[\baton]],
+	);
 
-	t.hit(SystemClock.seconds, dargs[\baton_lvl], dargs[\plank], (dargs[\baton] + 1));
 	if (t.isRecording, {
 		t.writeCSV(args);
 	});
-
 }, '/input');
 
 )

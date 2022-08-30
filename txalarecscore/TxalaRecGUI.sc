@@ -16,8 +16,6 @@ t = TxalaRecGUI.new;
 t.doTxalaScore();
 t.updateNumPlanks(n);
 t.setFileStoragePath(~storage_path);
-t.setCSVKeys(keys);
-t.setChannelSize(~numInputChannels.asInteger);
 
 p = true;
 
@@ -106,11 +104,10 @@ TxalaRecGUI {
 	}
 
 
-	hit { arg hittime, amp, plank=nil, stick=nil;
-		var hitdata, playerFromStick, player;
+	hit { arg hittime, amp, plank=nil, stick=nil, player=nil;
+		var hitdata;
 		if (txalascore.isNil.not, {
 			hittime = hittime - txalascoresttime;
-			player = if ((stick < 2), 0, 1); // FIXME: Channels could be any, need an dict of batons
 			hitdata = ().add(\time -> hittime)
 			            .add(\amp -> amp)
 					    .add(\player -> player)
