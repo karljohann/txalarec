@@ -1,115 +1,118 @@
 (
 // SETTINGS DIALOGUES =>
-var data = Dictionary.new;
 var thispath = thisProcess.nowExecutingPath.dirname;
-var persistControls;
 ~storage_path = "";
 ~wait_for_path = CondVar();
 
 // calibration window with auto load/save prefs
-~controls = Dictionary.new;
-w = Window(\Session_settings, 300@100).front;
-w.view.decorator = FlowLayout(w.view.bounds);
-w.view.decorator.gap = 2@2;
+{
+	var data = Dictionary.new;
+	var persistControls;
+	var labelWidth = 80;
+	var boundWidth = 360;
+	~controls = Dictionary.new;
+	w = Window(\Session_settings, (boundWidth + 10)@120).front;
+	w.view.decorator = FlowLayout(w.view.bounds);
+	w.view.decorator.gap = 2@2;
 
-persistControls = { |storage_path, controls|
-	data = Dictionary.new;
-	data.put(\storage_path, storage_path);
-	data.put(\threshold, controls[\threshold].value);
-	data.put(\relaxtime, controls[\relaxtime].value);
-	data.put(\gain, controls[\gain].value);
-	data.writeArchive(thispath ++ "/" ++ "prefs.preset");
-};
+	persistControls = { |storage_path, controls|
+		data = Dictionary.new;
+		data.put(\storage_path, storage_path);
+		data.put(\threshold, controls[\threshold].value);
+		data.put(\relaxtime, controls[\relaxtime].value);
+		data.put(\gain, controls[\gain].value);
+		data.writeArchive(thispath ++ "/" ++ "prefs.preset");
+	};
 
-~storage_path_control = Button(w, 290@20)
-.states_([
-	["storage_path", Color.white, Color.black]
-])
-.action_({ arg butt;
-	FileDialog({ |path|
-		var old_path = ~storage_path;
-		~storage_path = path[0];
-		persistControls.(~storage_path, ~controls);
-		if (File.exists(~storage_path +/+ "rec_info.scd"), { // continue if file exists (else things will break)
-			~wait_for_path.signalOne; // let the process know that the storage path has been set
-			// FIXME: We should run main every time path is changed?
-			if ((old_path != ~storage_path), { // Only run if path changed
-				~main.(~storage_path);
+	Button(w, boundWidth@20)
+	.states_([
+		["storage_path", Color.white, Color.black]
+	])
+	.action_({ arg butt;
+		FileDialog({ |path|
+			var old_path = ~storage_path;
+			~storage_path = path[0];
+			persistControls.(~storage_path, ~controls);
+			if (File.exists(~storage_path +/+ "rec_info.scd"), { // continue if file exists (else things will break)
+				~wait_for_path.signalOne; // let the process know that the storage path has been set
+				// FIXME: We should run main every time path is changed?
+				if ((old_path != ~storage_path), { // Only run if path changed
+					~main.(~storage_path);
+				});
+			}, {
+				"rec_info.scd does not exists in selected directory".postln;
 			});
-		}, {
-			"rec_info.scd does not exists in selected directory".postln;
-		});
-	},
-	fileMode: 2,
-	path: if (~storage_path.notEmpty, ~storage_path)
-	// path: ~storage_path
-	)
-});
-w.view.decorator.nextLine;
-~controls[\threshold] = EZSlider( w,         // parent
-	290@20,    // bounds
-	"threshold",  // label
-	ControlSpec(0, 1, \lin, 0.001, 0.06),     // controlSpec
-	{ arg ez;
-		~synths.do{ |syn| syn.set(\threshold, ez.value) };
-		persistControls.(~storage_path, ~controls);
-	},
-	initVal: 0.06,
-	labelWidth: 60;
-);
-~controls[\threshold].numberView.maxDecimals = 3 ;
-w.view.decorator.nextLine;
-~controls[\relaxtime] = EZSlider( w,         // parent
-	290@20,    // bounds
-	"relax time",  // label
-	ControlSpec(0, 1, \lin, 0.01, 0.01),     // controlSpec
-	{ arg ez;
-		~synths.do{ |syn| syn.set(\relaxtime, ez.value) };
-		persistControls.(~storage_path, ~controls);
-	},
-	initVal: 0.01,
-	labelWidth: 60;
-);
-w.view.decorator.nextLine;
-~controls[\gain] = EZSlider( w,         // parent
-	290@20,    // bounds
-	\gain,  // label
-	ControlSpec(0, 10, \lin, 0.01, 1),     // controlSpec
-	{ arg ez;
-		~synths.do{ |syn| syn.set(\gain, ez.value) };
-		persistControls.(~storage_path, ~controls);
-	},
-	initVal: 1,
-	labelWidth: 60;
-);
-
-// auto read prefs file. create a default one if not there
-data = Object.readArchive(thispath ++ "/" ++ "prefs.preset");
-
-if (data.isNil, { // file wasn't there. create a default one
-	var data = Dictionary[ // set default values
-		\threshold -> 0.1,
-		\relaxtime -> 0.01,
-		\gain -> 1,
-	];
-	persistControls.(~storage_path, data);
-}, {
-	~storage_path = data[\storage_path];
-});
-
-// restore the values from the prefs
-~synths.do{ |syn|
-	syn.set(
-		\threshold, data[\threshold],
-		\relaxtime, data[\relaxtime],
-		\gain, data[\gain],
+		},
+		fileMode: 2,
+		path: if (~storage_path.notEmpty, ~storage_path)
+		// path: ~storage_path
+		)
+	});
+	w.view.decorator.nextLine;
+	~controls[\threshold] = EZSlider( w,         // parent
+		boundWidth@20,    // bounds
+		"threshold",  // label
+		ControlSpec(0, 1, \lin, 0.001, 0.06),     // controlSpec
+		{ arg ez;
+			~synths.do{ |syn| syn.set(\threshold, ez.value) };
+			persistControls.(~storage_path, ~controls);
+		},
+		initVal: 0.06,
+		labelWidth: labelWidth;
 	);
-};
-// set the sliders but dont trigger the action at this moment
-~controls.keysDo{ |key|
-	~controls[key].value_( data[key] );
-};
+	~controls[\threshold].numberView.maxDecimals = 3;
+	w.view.decorator.nextLine;
+	~controls[\relaxtime] = EZSlider( w,         // parent
+		boundWidth@20,    // bounds
+		"relax time",  // label
+		ControlSpec(0, 1, \lin, 0.01, 0.01),     // controlSpec
+		{ arg ez;
+			~synths.do{ |syn| syn.set(\relaxtime, ez.value) };
+			persistControls.(~storage_path, ~controls);
+		},
+		initVal: 0.01,
+		labelWidth: labelWidth;
+	);
+	w.view.decorator.nextLine;
+	~controls[\gain] = EZSlider( w,         // parent
+		boundWidth@20,    // bounds
+		\gain,  // label
+		ControlSpec(0, 10, \lin, 0.01, 1),     // controlSpec
+		{ arg ez;
+			~synths.do{ |syn| syn.set(\gain, ez.value) };
+			persistControls.(~storage_path, ~controls);
+		},
+		initVal: 1,
+		labelWidth: labelWidth;
+	);
 
+	// auto read prefs file. create a default one if not there
+	data = Object.readArchive(thispath ++ "/" ++ "prefs.preset");
+
+	if (data.isNil, { // file wasn't there. create a default one
+		var data = Dictionary[ // set default values
+			\threshold -> 0.1,
+			\relaxtime -> 0.01,
+			\gain -> 1,
+		];
+		persistControls.(~storage_path, data);
+	}, {
+		~storage_path = data[\storage_path];
+	});
+
+	// restore the values from the prefs
+	~synths.do{ |syn|
+		syn.set(
+			\threshold, data[\threshold],
+			\relaxtime, data[\relaxtime],
+			\gain, data[\gain],
+		);
+	};
+	// set the sliders but dont trigger the action at this moment
+	~controls.keysDo{ |key|
+		~controls[key].value_( data[key] );
+	};
+}.();
 
 
 
