@@ -36,11 +36,9 @@ t.close
 
 TxalaRecGUI {
 	var parent;
-	var txalascoreevents, txalascoremarks, txalascore, timelinewin, txalascoreF, txalascoresttime, csvfile, <>recChannels;
-	var isRecording = false;
+	var txalascoreevents, txalascoremarks, txalascore, timelinewin, txalascoreF, txalascoresttime;
+	var filepath, <>recChannels, <isRecording = false, <>lasttime = 0;
 	var storagepath = "~/"; // assuming unix-based OS
-	var filepath;
-	var <>lasttime = 0; // init time of last hit
 
 	*new {
 		^super.new.initTxalaRecGUI();
@@ -77,12 +75,12 @@ TxalaRecGUI {
 		filepath = storagepath +/+ "sc_txala_rec_" ++ timestamp ++ ".csv";
 	}
 
-	initCSVFile { arg keys;
+	initCSVFile { arg args;
 		var csvfile;
 		var headers = "";
 
 		csvfile = File(filepath, "w");
-		keys.do{ |key|
+		args.asPairs.keysValuesDo{ |key, val|
 			headers = headers ++ key.asString ++ ",";
 		};
 		csvfile.write( headers );
@@ -90,14 +88,14 @@ TxalaRecGUI {
 	}
 
 	writeCSV { arg args;
-		if (not(File.exists(filepath)), { // TODO: Check for race-condition
-			this.initCSVFile(args.keys);
+		var csvfile;
+		if (not(File.exists(filepath)), { // TODO: Test for race-condition
+			this.initCSVFile(args);
 		});
-
 		csvfile = File(filepath, "a");
 		csvfile.write("\n"); // write new line bc append does not
-		args.keys.do{ |key|
-			csvfile.write( args[key].asString ++ ",");
+		args.asPairs.keysValuesDo{ |key, val|
+			csvfile.write( val.asString ++ ",");
 		};
 		csvfile.close;
 	}
@@ -108,11 +106,11 @@ TxalaRecGUI {
 	}
 
 
-	hit { arg hittime, amp, plank=nil, stick=nil, rawData=nil;
+	hit { arg hittime, amp, plank=nil, stick=nil;
 		var hitdata, playerFromStick, player;
 		if (txalascore.isNil.not, {
 			hittime = hittime - txalascoresttime;
-			player = if ((stick < 2), 0, 1);
+			player = if ((stick < 2), 0, 1); // FIXME: Channels could be any, need an dict of batons
 			hitdata = ().add(\time -> hittime)
 			            .add(\amp -> amp)
 					    .add(\player -> player)
@@ -120,10 +118,6 @@ TxalaRecGUI {
 					    .add(\stick -> stick);
 			txalascoreevents = txalascoreevents.add(hitdata);
 			txalascore.events = txalascoreevents;
-		});
-
-		if (isRecording, {
-			this.writeCSV(rawData);
 		});
 	}
 

@@ -262,7 +262,7 @@ fork {
 
 // OSC server =>
 OSCFunc({ arg msg;
-	var args;
+	var args, dargs;
 
 	// calculate timedelta ->
 	var clock = msg[7].asFloat;
@@ -271,7 +271,7 @@ OSCFunc({ arg msg;
 
 	t.lasttime = clock;
 
-	args = Dictionary[
+	args = [
 		\baton -> msg[3].asInteger,
 		\plank -> msg[5].asInteger,
 		\baton_lvl -> msg[4].asFloat,
@@ -287,7 +287,12 @@ OSCFunc({ arg msg;
 		\pitch_plk3 -> msg[14].asFloat,
 	];
 
-	t.hit(SystemClock.seconds, args[\baton_lvl], args[\plank], (args[\baton] + 1), args);
+	dargs = args.asDict; //
+
+	t.hit(SystemClock.seconds, dargs[\baton_lvl], dargs[\plank], (dargs[\baton] + 1));
+	if (t.isRecording, {
+		t.writeCSV(args);
+	});
 
 }, '/input');
 
