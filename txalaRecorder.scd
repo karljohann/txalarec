@@ -249,10 +249,12 @@ SynthDef(\detector, { |in=0, threshold=0.06, relaxtime=0.01, blocksize=1024, gai
 		~synths = List.new;
 		~channels[\baton].do{ |ch|
 			// create onset detection synth for each baton
-			~synths = ~synths.add(
-				Synth(\detector, [\in, ch])
-				.setn(\plank_channels, ~channels[\plk])
-			);
+			var synth = Synth(\detector, [\in, ch]);
+			synth.setn(\plank_channels, ~channels[\plk]);
+			~controls.keysValuesDo{ |key, item|
+				synth.setn(key.asSymbol, item.value.asFloat)
+			};
+			~synths = ~synths.add(synth);
 		};
 
 		// Init GUI ->
