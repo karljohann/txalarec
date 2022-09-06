@@ -16,8 +16,6 @@ t = TxalaRecGUI.new;
 t.doTxalaScore();
 t.updateNumPlanks(n);
 t.setFileStoragePath(~storage_path);
-t.setCSVKeys(keys);
-t.setChannelSize(~numInputChannels.asInteger);
 
 p = true;
 
@@ -36,11 +34,9 @@ t.close
 
 TxalaRecGUI {
 	var parent;
-	var txalascoreevents, txalascoremarks, txalascore, timelinewin, txalascoreF, txalascoresttime, csvfile, <>recChannels;
-	var isRecording = false;
+	var txalascoreevents, txalascoremarks, txalascore, timelinewin, txalascoreF, txalascoresttime;
+	var filepath, <>recChannels, <isRecording = false, <>lasttime = 0;
 	var storagepath = "~/"; // assuming unix-based OS
-	var filepath, csvKeys;
-	var <>lasttime = 0; // init time of last hit
 
 	*new {
 		^super.new.initTxalaRecGUI();
@@ -73,17 +69,16 @@ TxalaRecGUI {
 		storagepath = path.asString;
 	}
 
-	setCSVKeys { arg keys;
-		csvKeys = keys;
+	setFilepath { arg timestamp;
+		filepath = storagepath +/+ "sc_txala_rec_" ++ timestamp ++ ".csv";
 	}
 
-	initCSVFile { arg timestamp;
+	initCSVFile { arg args;
 		var csvfile;
 		var headers = "";
-		// NOTE: storagepath and csvKeys have to be set first
-		filepath = storagepath +/+ "sc_txala_rec_" ++ timestamp ++ ".csv";
+
 		csvfile = File(filepath, "w");
-		csvKeys.do{ |key|
+		args.asPairs.keysValuesDo{ |key, val|
 			headers = headers ++ key.asString ++ ",";
 		};
 		csvfile.write( headers );
@@ -91,14 +86,14 @@ TxalaRecGUI {
 	}
 
 	writeCSV { arg args;
-		// if (not(File.exists(filepath)), { // TODO: Check for race-condition
-		// this.initCSVFile(filepath);
-		// });
-
+		var csvfile;
+		if (not(File.exists(filepath)), { // TODO: Test for race-condition
+			this.initCSVFile(args);
+		});
 		csvfile = File(filepath, "a");
 		csvfile.write("\n"); // write new line bc append does not
-		csvKeys.do{ |key|
-			csvfile.write( args[key].asString ++ ",");
+		args.asPairs.keysValuesDo{ |key, val|
+			csvfile.write( val.asString ++ ",");
 		};
 		csvfile.close;
 	}
@@ -109,11 +104,10 @@ TxalaRecGUI {
 	}
 
 
-	hit { arg hittime, amp, plank=nil, stick=nil, rawData=nil;
-		var hitdata, playerFromStick, player;
+	hit { arg hittime, amp, plank=nil, stick=nil, player=nil;
+		var hitdata;
 		if (txalascore.isNil.not, {
 			hittime = hittime - txalascoresttime;
-			player = if ((stick < 2), 0, 1);
 			hitdata = ().add(\time -> hittime)
 			            .add(\amp -> amp)
 					    .add(\player -> player)
@@ -121,10 +115,6 @@ TxalaRecGUI {
 					    .add(\stick -> stick);
 			txalascoreevents = txalascoreevents.add(hitdata);
 			txalascore.events = txalascoreevents;
-		});
-
-		if (isRecording, {
-			this.writeCSV(rawData);
 		});
 	}
 
@@ -205,7 +195,7 @@ TxalaRecGUI {
 					Server.default.record(numChannels: 8);
 					isRecording = true;
 					this.changebg();
-					this.initCSVFile(Date.getDate.stamp);
+					this.setFilepath(Date.getDate.stamp); // Update the filepath so it doesnt overwrite
 				}, {
 					if ((butt.value == 0), {
 						Server.default.stopRecording;

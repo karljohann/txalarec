@@ -27,13 +27,6 @@
 	\ch9 -> "",
 ];
 
-// threshold=0.15, relaxtime=0.05, blocksize=1024, gain=0
-// settings for each baton channel
-~onsetSettings = Dictionary[
-	\chA -> [\gain, 5],
-	\ch4 -> [],
-];
-
 // Name of soundcard, if not needed leave empty string
 ~inputDevice = "16A";
 // The amount of channels on soundcard
