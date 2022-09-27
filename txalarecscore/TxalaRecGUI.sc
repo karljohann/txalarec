@@ -191,8 +191,11 @@ TxalaRecGUI {
 			.action_({ arg butt;
 				// Server.default.record;
 				if ((butt.value == 1), {
-					{ SoundIn.ar(recChannels) }.play;
-					Server.default.record(numChannels: 8);
+					// { SoundIn.ar(recChannels) }.play; // only needed to listen to input
+					Server.default.record(
+						bus: recChannels.minItem(),
+						numChannels: (recChannels.maxItem() - recChannels.minItem()),
+					);
 					isRecording = true;
 					this.changebg();
 					this.setFilepath(Date.getDate.stamp); // Update the filepath so it doesnt overwrite
