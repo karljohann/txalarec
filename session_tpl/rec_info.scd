@@ -29,5 +29,7 @@
 
 // Name of soundcard, if not needed leave empty string
 ~inputDevice = "16A";
-// The amount of channels on soundcard
+// "The number of output channels to record"
 ~numInputChannels = 8;
+// "the offset at which to start to count the number of channels"
+~fromBus = 0; // NOTE: do not change this unless you know what you are doing

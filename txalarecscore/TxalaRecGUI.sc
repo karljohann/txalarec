@@ -7,9 +7,6 @@
 /*
 usage:
 
-var keys = [\baton, \plank, \baton_lvl, \plank_lvl, \timedelta]; // datum to be recorded to CSV file
-~storage_path = "~/Downloads/txalaparta_recordings/session_test/"; // path to store recordings
-~numInputChannels = 8; // number of channels on soundcard (0..~numInputChannels)
 n = 3;
 
 t = TxalaRecGUI.new;
@@ -193,8 +190,8 @@ TxalaRecGUI {
 				if ((butt.value == 1), {
 					// { SoundIn.ar(recChannels) }.play; // only needed to listen to input
 					Server.default.record(
-						bus: recChannels.minItem(),
-						numChannels: (recChannels.maxItem() - recChannels.minItem()),
+						bus: ~fromBus,
+						numChannels: ~numInputChannels,
 					);
 					isRecording = true;
 					this.changebg();
