@@ -11,6 +11,6 @@
 
 ## Known bugs:
 - Control settings are only written at start – if they are changed during recording that is not represented in `rec_info.csv`
-- #6: Pitch detection is not very reliable
-- #5: Amount of planks does not scale – level and pitch are calculated for all included plank channels but the OSC function only sends the first three
-- #4: When there are gaps in the input channels, there will be empty channels (and possibly channels cut off)
+- [#6](https://github.com/karljohann/txalarec/issues/6): Pitch detection is not very reliable
+- [#5](https://github.com/karljohann/txalarec/issues/5): Amount of planks does not scale – level and pitch are calculated for all included plank channels but the OSC function only sends the first three
+- [#4](https://github.com/karljohann/txalarec/issues/4): When there are gaps in the input channels, there will be empty channels (and possibly channels cut off)
